@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador SOAT</title>
+<style>
+:root{--bg:#f7f8f7;--card:#fff;--ink:#1d2a25;--mute:#5f6d67;--line:#dfe5e2;--g:#1f4e3d;--gl:#e3efe9;--r:#a63d2f;--rl:#f8e6e3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:26px;margin:0 0 4px;color:var(--g)}
+.sub{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{display:block;font-size:14px;color:var(--mute);margin-bottom:4px}
+input,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:2px solid var(--g);outline-offset:1px}
+button{margin-top:16px;padding:11px 22px;border:0;border-radius:8px;background:var(--g);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button:hover{background:#173b2e}
+details summary{cursor:pointer;color:var(--g);font-weight:600}
+details .grid{margin-top:14px}
+.hint{font-size:13px;color:var(--mute);margin:10px 0 0}
+.err{color:var(--r);margin-top:12px;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:16px}
+.kpi{border-radius:12px;padding:16px;border:1px solid var(--line)}
+.kpi.ok{background:var(--gl)}.kpi.bad{background:var(--rl)}
+.kpi small{display:block;color:var(--mute);font-size:13px}
+.kpi b{display:block;font-size:24px;margin-top:2px}
+.kpi.bad b{color:var(--r)}.kpi.ok b{color:var(--g)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+thead th{background:var(--gl);font-size:13px}
+tbody tr:last-child td{border-bottom:0}
+.wrap{overflow-x:auto}
+.msg{font-size:15px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Simulador SOAT</h1>
+  <p class="sub">Compara pagar el SOAT contra no tenerlo y que ocurra un accidente.</p>
+
+  <form id="f" class="card">
+    <div class="grid">
+      <div><label for="tipo">Tipo de vehículo</label>
+        <select id="tipo"><option value="carro">Carro</option><option value="moto" selected>Moto</option><option value="camioneta">Camioneta</option><option value="otro">Otro (taxi / microbús)</option></select></div>
+      <div><label for="cc">Cilindraje (cc)</label><input id="cc" type="number" min="1" value="125" required></div>
+      <div><label for="edad">Antigüedad (años)</label><input id="edad" type="number" min="0" value="4" required></div>
+    </div>
+    <details style="margin-top:16px">
+      <summary>Datos fijos (puedes cambiarlos)</summary>
+      <div class="grid">
+        <div><label for="costo_servicio">Costo servicio médico ($)</label><input id="costo_servicio" type="number" min="0" value="30000000"></div>
+        <div><label for="gastos_adicionales">Gastos adicionales ($)</label><input id="gastos_adicionales" type="number" min="0" value="1500000"></div>
+        <div><label for="descuento_seguro">Cobertura médica del SOAT ($)</label><input id="descuento_seguro" type="number" min="0" value="46666667"></div>
+        <div><label for="base_gravable">Base gravable ($)</label><input id="base_gravable" type="number" min="0" value="1750000"></div>
+        <div><label for="tarifa_legal">Tarifa legal (%)</label><input id="tarifa_legal" type="number" min="0" value="100"></div>
+        <div><label for="tiempo_retraso">Tiempo de retraso (meses)</label><input id="tiempo_retraso" type="number" min="0" value="1"></div>
+      </div>
+      <p class="hint">Costo servicio, gastos adicionales y tiempo de retraso son valores de ejemplo. Base gravable = salario mínimo 2026. Multa = 30 salarios mínimos diarios.</p>
+    </details>
+    <button type="submit">Simular</button>
+    <div id="err" class="err" hidden></div>
+  </form>
+
+  <section id="out" hidden>
+    <div class="kpis">
+      <div class="kpi ok"><small>Costo mensual equivalente del SOAT</small><b id="k1"></b></div>
+      <div class="kpi bad"><small>Pérdida si hay accidente sin SOAT</small><b id="k2"></b></div>
+    </div>
+    <div class="card wrap">
+      <table>
+        <thead><tr><th>Escenario</th><th>Costo SOAT</th><th>Gastos médicos</th><th>Sanciones</th><th>Impacto accidentes</th><th>Costo total</th><th>Pérdida financiera</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <p class="msg" id="msg"></p>
+  </section>
+</main>
+
+<script>
+// Listas
+const ESCENARIOS = ["Sí tiene SOAT", "No tiene SOAT"];
+// Tabla de tarifas: [tipo, ccMin, ccMax, edadMin, edadMax, valor]
+const TARIFAS_SOAT = [
+  ["moto",0,99,0,99,256300],["moto",100,200,0,99,343500],["moto",201,99999,0,99,761500],
+  ["carro",0,1499,0,9,447300],["carro",0,1499,10,99,447300],
+  ["carro",1500,2499,0,99,600000],["carro",2500,99999,0,99,700000],
+  ["camioneta",0,2499,0,99,792900],["camioneta",2500,99999,0,99,950000],
+  ["otro",0,99999,0,99,282100]
+];
+const $ = id => document.getElementById(id);
+const money = v => "$" + Math.round(v).toLocaleString("es-CO");
+
+function buscarTarifa(c){
+  const f = TARIFAS_SOAT.find(([t,a,b,e1,e2]) => t===c.tipo && c.cc>=a && c.cc<=b && c.edad>=e1 && c.edad<=e2);
+  if(!f) throw new Error("No hay tarifa para ese vehículo.");
+  return f[5];
+}
+function calcularCaso(c, esc, fx){
+  const tiene = esc === "Sí tiene SOAT";
+  const costo_soat = tiene ? buscarTarifa(c) : 0;
+  const cubierto = tiene ? Math.min(fx.costo_servicio, fx.descuento_seguro) : 0;
+  const gastos_medicos = fx.costo_servicio - cubierto + fx.gastos_adicionales;
+  const sanciones = tiene ? 0 : fx.base_gravable * fx.tarifa_legal * fx.tiempo_retraso;
+  const impacto_accidentes = gastos_medicos + sanciones;
+  const impacto_financiero = costo_soat + impacto_accidentes;
+  return {estado_soat: esc, costo_soat, gastos_medicos, sanciones, impacto_accidentes,
+          impacto_financiero, costo_total: impacto_financiero, perdida_financiera: 0};
+}
+function comparar(c, fx){
+  const casos = ESCENARIOS.map(e => calcularCaso(c, e, fx));
+  const mejor = Math.min(...casos.map(x => x.costo_total));
+  casos.forEach(x => x.perdida_financiera = x.costo_total - mejor);
+  return casos;
+}
+
+$("f").addEventListener("submit", ev => {
+  ev.preventDefault();
+  $("err").hidden = true;
+  try{
+    const c = {tipo:$("tipo").value, cc:+$("cc").value, edad:+$("edad").value};
+    if(!(c.cc>0) || !(c.edad>=0)) throw new Error("Cilindraje y antigüedad deben ser números válidos.");
+    const fx = {};
+    ["costo_servicio","gastos_adicionales","descuento_seguro","base_gravable","tiempo_retraso"].forEach(k => fx[k] = +$(k).value);
+    fx.tarifa_legal = +$("tarifa_legal").value / 100;
+    const casos = comparar(c, fx);
+    $("tb").innerHTML = casos.map(x => `<tr><td>${x.estado_soat}</td><td>${money(x.costo_soat)}</td><td>${money(x.gastos_medicos)}</td><td>${money(x.sanciones)}</td><td>${money(x.impacto_accidentes)}</td><td>${money(x.costo_total)}</td><td>${money(x.perdida_financiera)}</td></tr>`).join("");
+    const [si, no] = casos;
+    $("k1").textContent = money(si.costo_soat/12);
+    $("k2").textContent = money(no.perdida_financiera);
+    $("msg").textContent = `El SOAT cuesta ${money(si.costo_soat)} al año. Si ocurre un accidente y no lo tienes, pagas ${money(no.costo_total)} frente a ${money(si.costo_total)} con SOAT: ${money(no.costo_total - si.costo_total)} más.`;
+    $("out").hidden = false;
+  }catch(e){ $("err").textContent = e.message; $("err").hidden = false; $("out").hidden = true; }
+});
+</script>
+</body>
+</html>

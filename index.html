@@ -21,6 +21,7 @@ button:hover{background:#173b2e}
 details summary{cursor:pointer;color:var(--g);font-weight:600}
 details .grid{margin-top:14px}
 .hint{font-size:13px;color:var(--mute);margin:10px 0 0}
+#cc-err{font-size:13px;margin-top:4px}
 .err{color:var(--r);margin-top:12px;font-weight:600}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:16px}
 .kpi{border-radius:12px;padding:16px;border:1px solid var(--line)}
@@ -46,8 +47,8 @@ tbody tr:last-child td{border-bottom:0}
   <form id="f" class="card">
     <div class="grid">
       <div><label for="tipo">Tipo de vehículo</label>
-        <select id="tipo"><option value="carro">Carro</option><option value="moto" selected>Moto</option><option value="camioneta">Camioneta</option><option value="otro">Otro (taxi / microbús)</option></select></div>
-      <div><label for="cc">Cilindraje (cc)</label><input id="cc" type="number" min="1" value="125" required></div>
+        <select id="tipo"><option value="carro">Carro</option><option value="moto" selected>Moto</option><option value="camion">Camión</option><option value="camioneta">Camioneta</option><option value="taxi">Taxi</option><option value="microbus">Microbús</option></select></div>
+      <div><label for="cc">Cilindraje (cc)</label><input id="cc" type="number" min="50" max="28399" value="125" required><div id="cc-err" class="err" hidden></div></div>
       <div><label for="edad">Antigüedad (años)</label><input id="edad" type="number" min="0" value="4" required></div>
     </div>
     <details style="margin-top:16px">
@@ -90,7 +91,7 @@ const TARIFAS_SOAT = [
   ["carro",0,1499,0,9,447300],["carro",0,1499,10,99,447300],
   ["carro",1500,2499,0,99,600000],["carro",2500,99999,0,99,700000],
   ["camioneta",0,2499,0,99,792900],["camioneta",2500,99999,0,99,950000],
-  ["otro",0,99999,0,99,282100]
+  ["camion",0,99999,0,99,282100],["taxi",0,99999,0,99,282100],["microbus",0,99999,0,99,282100]
 ];
 const $ = id => document.getElementById(id);
 const money = v => "$" + Math.round(v).toLocaleString("es-CO");
@@ -120,10 +121,14 @@ function comparar(c, fx){
 
 $("f").addEventListener("submit", ev => {
   ev.preventDefault();
-  $("err").hidden = true;
+  $("err").hidden = true; $("cc-err").hidden = true;
   try{
     const c = {tipo:$("tipo").value, cc:+$("cc").value, edad:+$("edad").value};
-    if(!(c.cc>0) || !(c.edad>=0)) throw new Error("Cilindraje y antigüedad deben ser números válidos.");
+    if(!(c.cc>=50 && c.cc<28400)){
+      $("cc-err").textContent = "El cilindraje debe ser mayor o igual a 50 y menor a 28.400 cc.";
+      $("cc-err").hidden = false; $("out").hidden = true; return;
+    }
+    if(!(c.edad>=0)) throw new Error("No hay tarifa para ese vehículo.");
     const fx = {};
     ["costo_servicio","gastos_adicionales","descuento_seguro","base_gravable","tiempo_retraso"].forEach(k => fx[k] = +$(k).value);
     fx.tarifa_legal = +$("tarifa_legal").value / 100;

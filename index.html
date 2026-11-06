@@ -36,6 +36,9 @@ thead th{background:var(--gl);font-size:13px}
 tbody tr:last-child td{border-bottom:0}
 .wrap{overflow-x:auto}
 .msg{font-size:15px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{margin:0;background:var(--gl);color:var(--g)}.tabs button.on{background:var(--g);color:#fff}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.top button{margin:0;padding:6px 14px}
+.ok-msg{color:var(--g);margin-top:12px;font-weight:600}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -43,6 +46,22 @@ tbody tr:last-child td{border-bottom:0}
 <main>
   <h1>Simulador SOAT</h1>
   <p class="sub">Compara pagar el SOAT contra no tenerlo y que ocurra un accidente.</p>
+
+  <section id="auth" class="card">
+    <div class="tabs"><button type="button" id="t-login" class="on">Iniciar sesión</button><button type="button" id="t-reg">Crear cuenta</button></div>
+    <form id="fa">
+      <div class="grid">
+        <div><label for="usr">Usuario</label><input id="usr" type="text" required></div>
+        <div><label for="pwd">Contraseña</label><input id="pwd" type="text" required></div>
+      </div>
+      <button type="submit" id="fa-btn">Entrar</button>
+      <div id="auth-msg" class="err" hidden></div>
+    </form>
+    <p class="hint">Demo: usuarios y contraseñas se guardan en texto plano en el navegador (localStorage). No usar en producción.</p>
+  </section>
+
+  <div id="app" hidden>
+  <div class="top"><span>Hola, <b id="quien"></b></span><button type="button" id="salir">Cerrar sesión</button></div>
 
   <form id="f" class="card">
     <div class="grid">
@@ -80,6 +99,7 @@ tbody tr:last-child td{border-bottom:0}
     </div>
     <p class="msg" id="msg"></p>
   </section>
+  </div>
 </main>
 
 <script>
@@ -118,6 +138,38 @@ function comparar(c, fx){
   casos.forEach(x => x.perdida_financiera = x.costo_total - mejor);
   return casos;
 }
+
+// Login básico (texto plano, solo demo)
+let modoReg = false;
+const usuarios = () => JSON.parse(localStorage.getItem("usuarios") || "{}");
+function vista(){
+  const u = localStorage.getItem("sesion");
+  $("auth").hidden = !!u; $("app").hidden = !u;
+  if(u) $("quien").textContent = u;
+}
+function modo(reg){
+  modoReg = reg;
+  $("t-login").classList.toggle("on", !reg); $("t-reg").classList.toggle("on", reg);
+  $("fa-btn").textContent = reg ? "Crear cuenta" : "Entrar";
+  $("auth-msg").hidden = true;
+}
+$("t-login").onclick = () => modo(false);
+$("t-reg").onclick = () => modo(true);
+$("fa").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const u = $("usr").value.trim(), p = $("pwd").value, us = usuarios(), m = $("auth-msg");
+  m.hidden = false;
+  if(modoReg){
+    if(us[u]){ m.textContent = "Ese usuario ya existe."; return; }
+    us[u] = p; localStorage.setItem("usuarios", JSON.stringify(us));
+    modo(false); m.hidden = false; m.className = "ok-msg"; m.textContent = "Cuenta creada. Ahora inicia sesión."; return;
+  }
+  m.className = "err";
+  if(us[u] !== p){ m.textContent = "Usuario o contraseña incorrectos."; return; }
+  localStorage.setItem("sesion", u); $("fa").reset(); m.hidden = true; vista();
+});
+$("salir").onclick = () => { localStorage.removeItem("sesion"); vista(); };
+vista();
 
 $("f").addEventListener("submit", ev => {
   ev.preventDefault();

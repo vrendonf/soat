@@ -144,6 +144,6 @@ La pregunta 6 es la que más se olvida: un programa sin validación calcula con 
 
 ## Limitaciones
 
-- Las tarifas de camión, taxi y microbús son provisionales (valor $282.100 copiado de la categoría anterior "Otro"). Deben reemplazarse por las tarifas oficiales.
+- Las tarifas varían por tipo, cilindraje y antigüedad. Solo algunas son las publicadas para 2026 (carro menos de 1.500 cc, taxi menos de 1.500 cc, camión de carga liviana); el resto son estimaciones y deben reemplazarse por las del simulador oficial de la Superfinanciera.
 - Los costos médicos y gastos adicionales son valores de ejemplo.
 - Los cambios no se probaron en un navegador durante el desarrollo.

@@ -107,11 +107,20 @@ tbody tr:last-child td{border-bottom:0}
 const ESCENARIOS = ["Sí tiene SOAT", "No tiene SOAT"];
 // Tabla de tarifas: [tipo, ccMin, ccMax, edadMin, edadMax, valor]
 const TARIFAS_SOAT = [
-  ["moto",0,99,0,99,256300],["moto",100,200,0,99,343500],["moto",201,99999,0,99,761500],
-  ["carro",0,1499,0,9,447300],["carro",0,1499,10,99,447300],
-  ["carro",1500,2499,0,99,600000],["carro",2500,99999,0,99,700000],
+  // Moto
+  ["moto",50,99,0,99,256300],["moto",100,200,0,99,343500],["moto",201,99999,0,99,761500],
+  // Carro (<1500 cc según tarifas 2026 publicadas; el resto estimado)
+  ["carro",0,1499,0,9,447300],["carro",0,1499,10,99,592900],
+  ["carro",1500,2499,0,9,600000],["carro",1500,2499,10,99,795000],
+  ["carro",2500,99999,0,9,700000],["carro",2500,99999,10,99,927500],
+  // Camioneta
   ["camioneta",0,2499,0,99,792900],["camioneta",2500,99999,0,99,950000],
-  ["camion",0,99999,0,99,282100],["taxi",0,99999,0,99,282100],["microbus",0,99999,0,99,282100]
+  // Camión (carga < 5 t = 888.400 publicado; el resto estimado)
+  ["camion",0,2499,0,99,888400],["camion",2500,9999,0,99,1100000],["camion",10000,99999,0,99,1400000],
+  // Taxi (<1500 cc = 281.900 publicado; el resto estimado)
+  ["taxi",0,1499,0,99,281900],["taxi",1500,2499,0,99,350000],["taxi",2500,99999,0,99,420000],
+  // Microbús (estimado)
+  ["microbus",0,2499,0,99,540000],["microbus",2500,99999,0,99,673300]
 ];
 const $ = id => document.getElementById(id);
 const money = v => "$" + Math.round(v).toLocaleString("es-CO");

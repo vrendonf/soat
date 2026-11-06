@@ -65,7 +65,7 @@ Se decidió **modificar solo lo que faltaba**, sin reescribir lo que ya funciona
 | Tarifa inexistente | Ya funcionaba | Sin cambios |
 | Cálculos y tabla de escenarios | Ya funcionaban | Sin cambios |
 
-Limitación conocida: las tarifas de camión, taxi y microbús reutilizan el valor que tenía "Otro" ($282.100). Son valores provisionales y deben reemplazarse por las tarifas oficiales en la constante `TARIFAS_SOAT`. Los cambios no se probaron en un navegador.
+Limitación conocida: solo algunas tarifas de `TARIFAS_SOAT` son las publicadas para 2026; las demás son estimaciones y deben reemplazarse por las oficiales de la Superfinanciera. Los cambios no se probaron en un navegador.
 
 ### Paso 5. Control de versiones y subida a GitHub
 Claude ejecutó estos comandos a petición del usuario:

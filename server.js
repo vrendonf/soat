@@ -103,6 +103,21 @@ async function handle(req, res) {
       const response = await supabaseFetch('/rest/v1/profiles?select=id,email,full_name,birth_date,phone,is_admin,created_at&order=created_at.desc', { headers: { authorization: `Bearer ${secretKey}` } }, true)
       return json(res, response.status, await response.json())
     }
+    if (url.pathname.startsWith('/api/admin/profiles/') && ['PUT', 'DELETE'].includes(req.method)) {
+      const session = await currentUser(req)
+      if (!session || !(await profileFor(session.user.id))?.is_admin) return json(res, 403, { message: 'Acceso de administrador requerido.' })
+      const profileId = decodeURIComponent(url.pathname.split('/').pop())
+      if (profileId === session.user.id && req.method === 'DELETE') return json(res, 400, { message: 'No puedes eliminar tu propio usuario administrador.' })
+      if (req.method === 'DELETE') {
+        const response = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(profileId)}`, { method: 'DELETE', headers: { authorization: `Bearer ${secretKey}` } }, true)
+        return json(res, response.status, await responseData(response))
+      }
+      const data = await body(req)
+      const authResponse = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(profileId)}`, { method: 'PUT', headers: { authorization: `Bearer ${secretKey}` }, body: JSON.stringify({ email: data.email, user_metadata: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) }, true)
+      if (!authResponse.ok) return json(res, authResponse.status, await responseData(authResponse))
+      const profileResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(profileId)}`, { method: 'PATCH', headers: { authorization: `Bearer ${secretKey}`, prefer: 'return=representation' }, body: JSON.stringify({ email: data.email, full_name: data.full_name, birth_date: data.birth_date, phone: data.phone }) }, true)
+      return json(res, profileResponse.status, await responseData(profileResponse))
+    }
     if (url.pathname === '/' || url.pathname === '/index.html') {
       const html = await fs.readFile(path.join(__dirname, 'index.html'))
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })

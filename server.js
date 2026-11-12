@@ -26,6 +26,12 @@ async function supabaseFetch(endpoint, options = {}, useSecret = false) {
   return fetch(`${supabaseUrl}${endpoint}`, { ...options, headers })
 }
 
+async function responseData(response) {
+  const text = await response.text()
+  if (!text) return { message: 'Supabase no devolvió contenido.' }
+  try { return JSON.parse(text) } catch { return { message: text } }
+}
+
 async function currentUser(req) {
   const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
   if (!token) return null
@@ -54,8 +60,7 @@ async function handle(req, res) {
         return json(res, 400, { message: 'Faltan datos de registro.' })
       }
       const response = await supabaseFetch('/auth/v1/admin/users', { method: 'POST', headers: { authorization: `Bearer ${secretKey}` }, body: JSON.stringify({ email: data.email, password: data.password, email_confirm: true, user_metadata: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) }, true)
-      const payload = await response.text()
-      return json(res, response.status, payload ? JSON.parse(payload) : { message: 'Supabase no devolvió contenido.' })
+      return json(res, response.status, await responseData(response))
     }
     if (url.pathname === '/api/auth/login' && req.method === 'POST') {
       const data = await body(req)

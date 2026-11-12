@@ -3,7 +3,7 @@ const fs = require('node:fs/promises')
 const path = require('node:path')
 
 const port = Number(process.env.PORT || 3000)
-const supabaseUrl = process.env.SUPABASE_URL
+const supabaseUrl = (process.env.SUPABASE_URL || '').trim().replace(/^\[([^\]]+)\]\([^)]*\)$/, '$1').replace(/\/$/, '')
 const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY
 const secretKey = process.env.SUPABASE_SECRET_KEY
 

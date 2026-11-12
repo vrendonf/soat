@@ -91,7 +91,11 @@ async function handle(req, res) {
       const session = await currentUser(req)
       if (!session || !(await profileFor(session.user.id))?.is_admin) return json(res, 403, { message: 'Acceso de administrador requerido.' })
       const response = await supabaseFetch('/rest/v1/simulations?select=*&order=created_at.desc', { headers: { authorization: `Bearer ${secretKey}` } }, true)
-      return json(res, response.status, await response.json())
+      const simulations = response.ok ? await response.json() : []
+      const profilesResponse = await supabaseFetch('/rest/v1/profiles?select=id,email,full_name,birth_date,phone,is_admin', { headers: { authorization: `Bearer ${secretKey}` } }, true)
+      const profiles = profilesResponse.ok ? await profilesResponse.json() : []
+      const profilesById = Object.fromEntries(profiles.map(profile => [profile.id, profile]))
+      return json(res, response.status, simulations.map(simulation => ({ ...simulation, profile: profilesById[simulation.user_id] || null })))
     }
     if (url.pathname === '/api/admin/profiles' && req.method === 'GET') {
       const session = await currentUser(req)

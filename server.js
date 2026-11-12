@@ -103,4 +103,8 @@ async function handle(req, res) {
   }
 }
 
-http.createServer(handle).listen(port, () => console.log(`MotoProtegida escuchando en http://localhost:${port}`))
+if (require.main === module) {
+  http.createServer(handle).listen(port, () => console.log(`MotoProtegida escuchando en http://localhost:${port}`))
+}
+
+module.exports = handle

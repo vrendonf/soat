@@ -49,7 +49,7 @@ async function profileFor(userId) {
 async function handle(req, res) {
   if (missingEnv.length) return json(res, 500, { message: `Faltan variables de entorno en Vercel: ${missingEnv.join(', ')}` })
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' })
+    res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS' })
     return res.end()
   }
   const url = new URL(req.url, `http://${req.headers.host}`)

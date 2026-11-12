@@ -53,15 +53,16 @@ async function handle(req, res) {
       if (!data.email || !data.password || !data.full_name || !data.birth_date || !data.phone) {
         return json(res, 400, { message: 'Faltan datos de registro.' })
       }
-      const response = await supabaseFetch('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email: data.email, password: data.password, data: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) })
+      const response = await supabaseFetch('/auth/v1/admin/users', { method: 'POST', headers: { authorization: `Bearer ${secretKey}` }, body: JSON.stringify({ email: data.email, password: data.password, email_confirm: true, user_metadata: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) }, true)
       const payload = await response.text()
       return json(res, response.status, payload ? JSON.parse(payload) : { message: 'Supabase no devolvió contenido.' })
     }
     if (url.pathname === '/api/auth/login' && req.method === 'POST') {
       const data = await body(req)
-      let email = data.identity
+      let email = String(data.identity || '').trim()
       if (!email.includes('@')) {
-        const lookup = await supabaseFetch(`/rest/v1/profiles?phone=eq.${encodeURIComponent(email)}&select=email`, {}, true)
+        const phone = email.replace(/[^0-9+]/g, '')
+        const lookup = await supabaseFetch(`/rest/v1/profiles?phone=eq.${encodeURIComponent(phone)}&select=email`, { headers: { authorization: `Bearer ${secretKey}` } }, true)
         const profiles = lookup.ok ? await lookup.json() : []
         email = profiles[0]?.email
       }

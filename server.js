@@ -7,9 +7,7 @@ const supabaseUrl = process.env.SUPABASE_URL
 const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY
 const secretKey = process.env.SUPABASE_SECRET_KEY
 
-if (!supabaseUrl || !publishableKey || !secretKey) {
-  throw new Error('Faltan SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY o SUPABASE_SECRET_KEY en .env')
-}
+const missingEnv = ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'SUPABASE_SECRET_KEY'].filter(name => !process.env[name])
 
 const json = (res, status, data) => {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' })
@@ -43,6 +41,7 @@ async function profileFor(userId) {
 }
 
 async function handle(req, res) {
+  if (missingEnv.length) return json(res, 500, { message: `Faltan variables de entorno en Vercel: ${missingEnv.join(', ')}` })
   if (req.method === 'OPTIONS') {
     res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,OPTIONS' })
     return res.end()

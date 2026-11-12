@@ -113,6 +113,11 @@ async function handle(req, res) {
         return json(res, response.status, await responseData(response))
       }
       const data = await body(req)
+      if (typeof data.is_admin === 'boolean' && Object.keys(data).length === 1) {
+        if (profileId === session.user.id && !data.is_admin) return json(res, 400, { message: 'No puedes quitarte el rol de administrador a ti mismo.' })
+        const adminResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(profileId)}`, { method: 'PATCH', headers: { authorization: `Bearer ${secretKey}`, prefer: 'return=representation' }, body: JSON.stringify({ is_admin: data.is_admin }) }, true)
+        return json(res, adminResponse.status, await responseData(adminResponse))
+      }
       const authResponse = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(profileId)}`, { method: 'PUT', headers: { authorization: `Bearer ${secretKey}` }, body: JSON.stringify({ email: data.email, user_metadata: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) }, true)
       if (!authResponse.ok) return json(res, authResponse.status, await responseData(authResponse))
       const profileResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(profileId)}`, { method: 'PATCH', headers: { authorization: `Bearer ${secretKey}`, prefer: 'return=representation' }, body: JSON.stringify({ email: data.email, full_name: data.full_name, birth_date: data.birth_date, phone: data.phone }) }, true)

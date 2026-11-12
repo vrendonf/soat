@@ -50,8 +50,12 @@ async function handle(req, res) {
   try {
     if (url.pathname === '/api/auth/signup' && req.method === 'POST') {
       const data = await body(req)
+      if (!data.email || !data.password || !data.full_name || !data.birth_date || !data.phone) {
+        return json(res, 400, { message: 'Faltan datos de registro.' })
+      }
       const response = await supabaseFetch('/auth/v1/signup', { method: 'POST', body: JSON.stringify({ email: data.email, password: data.password, data: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) })
-      return json(res, response.status, await response.json())
+      const payload = await response.text()
+      return json(res, response.status, payload ? JSON.parse(payload) : { message: 'Supabase no devolvió contenido.' })
     }
     if (url.pathname === '/api/auth/login' && req.method === 'POST') {
       const data = await body(req)
@@ -98,7 +102,7 @@ async function handle(req, res) {
     res.end('Not found')
   } catch (error) {
     console.error(error)
-    json(res, 500, { message: 'Error interno del servidor.' })
+    json(res, 500, { message: 'Error interno del servidor.', detail: error instanceof Error ? error.message : String(error) })
   }
 }
 

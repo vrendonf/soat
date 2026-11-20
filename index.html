@@ -81,6 +81,6 @@ const tarifaNota=document.createElement("p");tarifaNota.id="tarifa-nota";tarifaN
 function textoTarifa(cc){if(!(cc>=50&&cc<=2000))return"";const v=money(buscarTarifa(cc));if(cc<100)return`Para motos de menos de 100 cc la tarifa SOAT es ${v}.`;if(cc<=200)return`Para motos de 100 a 200 cc la tarifa SOAT es ${v}.`;return`Para motos de más de 200 cc la tarifa SOAT es ${v}.`}
 function actualizarTarifaTexto(){const t=textoTarifa($("cc").value);if(ccHint)ccHint.textContent=t||"Tarifa SOAT según rango.";tarifaNota.textContent=t?`${t} El valor depende del cilindraje (ciclomotor: $124.100; <100 cc: $256.200; 100–200 cc: $343.300; >200 cc: $761.400; motocarro/tricimoto/cuadriciclo: $386.900). Fuente: previsora.gov.co`:""}
 $("cc").addEventListener("input",actualizarTarifaTexto);$("f").addEventListener("submit",()=>setTimeout(actualizarTarifaTexto,30));actualizarTarifaTexto();
-const calcularCasoUVB=calcularCaso;calcularCaso=(c,conSoat)=>{const r=calcularCasoUVB(c,conSoat);if(!conSoat){r.medicos=r.medicosTotales-r.hospital-r.terapia;r.total=r.hospital+r.terapia+r.medicos+r.multa}return r};
+const calcularCasoUVB=calcularCaso;calcularCaso=(c,conSoat)=>{const r=calcularCasoUVB(c,conSoat);if(!conSoat){r.medicos=r.medicosTotales-r.hospital-r.terapia;r.total=r.hospital+r.terapia+r.medicos+r.multa}else{const exceso=r.medicos,ter=Math.min(exceso,r.terapia),hos=Math.min(exceso-ter,r.hospital);r.terapia=ter;r.hospital=hos;r.medicos=exceso-ter-hos}return r};
 </script>
 </body></html>

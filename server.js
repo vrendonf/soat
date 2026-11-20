@@ -97,6 +97,13 @@ async function handle(req, res) {
       const profilesById = Object.fromEntries(profiles.map(profile => [profile.id, profile]))
       return json(res, response.status, simulations.map(simulation => ({ ...simulation, profile: profilesById[simulation.user_id] || null })))
     }
+    if (url.pathname === '/api/admin/simulations' && req.method === 'DELETE') {
+      const session = await currentUser(req)
+      if (!session || !(await profileFor(session.user.id))?.is_admin) return json(res, 403, { message: 'Acceso de administrador requerido.' })
+      const response = await supabaseFetch('/rest/v1/simulations?id=not.is.null', { method: 'DELETE', headers: { authorization: `Bearer ${secretKey}` } }, true)
+      if (!response.ok) return json(res, response.status, await responseData(response))
+      return json(res, 200, { message: 'Registros borrados.' })
+    }
     if (url.pathname === '/api/admin/profiles' && req.method === 'GET') {
       const session = await currentUser(req)
       if (!session || !(await profileFor(session.user.id))?.is_admin) return json(res, 403, { message: 'Acceso de administrador requerido.' })

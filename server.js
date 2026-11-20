@@ -125,7 +125,8 @@ async function handle(req, res) {
         const adminResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(profileId)}`, { method: 'PATCH', headers: { authorization: `Bearer ${secretKey}`, prefer: 'return=representation' }, body: JSON.stringify({ is_admin: data.is_admin }) }, true)
         return json(res, adminResponse.status, await responseData(adminResponse))
       }
-      const authResponse = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(profileId)}`, { method: 'PUT', headers: { authorization: `Bearer ${secretKey}` }, body: JSON.stringify({ email: data.email, user_metadata: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) }, true)
+      data.birth_date = data.birth_date || undefined
+      const authResponse = await supabaseFetch(`/auth/v1/admin/users/${encodeURIComponent(profileId)}`, { method: 'PUT', headers: { authorization: `Bearer ${secretKey}` }, body: JSON.stringify({ email: data.email, email_confirm: true, user_metadata: { full_name: data.full_name, birth_date: data.birth_date, phone: data.phone } }) }, true)
       if (!authResponse.ok) return json(res, authResponse.status, await responseData(authResponse))
       const profileResponse = await supabaseFetch(`/rest/v1/profiles?id=eq.${encodeURIComponent(profileId)}`, { method: 'PATCH', headers: { authorization: `Bearer ${secretKey}`, prefer: 'return=representation' }, body: JSON.stringify({ email: data.email, full_name: data.full_name, birth_date: data.birth_date, phone: data.phone }) }, true)
       return json(res, profileResponse.status, await responseData(profileResponse))
